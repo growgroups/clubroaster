@@ -4,12 +4,14 @@ const app=fs.readFileSync('app.js','utf8');
 const patch=fs.readFileSync('patch.js','utf8');
 const mobile=fs.readFileSync('mobile-app.js','utf8');
 const checklist=fs.readFileSync('game-day-checklist.js','utf8');
+const season=fs.readFileSync('season-planning.js','utf8');
 const failures=[];const assert=(ok,msg)=>{if(!ok)failures.push(msg)};
 const requiredPages=['dashboard','fixtures','umpires','availability','roster','tasks','gameday','finance','payments','reports','notifications','import','rules','coaching','roles','junior','mobile','audit','blueprint','playbook','actionplan'];
 assert(html.includes('<script src="app.js"></script>'),'index.html does not load app.js');
 assert(html.includes('<script src="patch.js"></script>'),'index.html does not load patch.js');
 assert(html.includes('<script src="mobile-app.js"></script>'),'index.html does not load mobile-app.js');
 assert(html.includes('<script src="game-day-checklist.js"></script>'),'index.html does not load game-day-checklist.js');
+assert(checklist.includes("seasonPlanningScript.src='season-planning.js'"),'Season planning module is not loaded');
 assert(html.includes('data-action="home"'),'Home breadcrumb is not wired');
 assert(html.includes('data-action="current"'),'Current-page breadcrumb is not wired');
 assert(html.includes('data-action="season"'),'Season breadcrumb is not wired');
@@ -18,6 +20,7 @@ try{new Function(app)}catch(err){failures.push(`app.js syntax error: ${err.messa
 try{new Function(patch)}catch(err){failures.push(`patch.js syntax error: ${err.message}`)}
 try{new Function(mobile)}catch(err){failures.push(`mobile-app.js syntax error: ${err.message}`)}
 try{new Function(checklist)}catch(err){failures.push(`game-day-checklist.js syntax error: ${err.message}`)}
+try{new Function(season)}catch(err){failures.push(`season-planning.js syntax error: ${err.message}`)}
 const pageObject=app.match(/const pages=\{([^;]+)\};/s)?.[1]||'';
 const pageIds=new Set([...pageObject.matchAll(/([A-Za-z][A-Za-z0-9]*):'/g)].map(m=>m[1]));
 for(const id of requiredPages)assert(pageIds.has(id),`Page missing from pages object: ${id}`);
@@ -60,5 +63,15 @@ assert(checklist.includes("type:'Game Day'"),'Checklist does not create Game Day
 assert(checklist.includes("auditEvents.unshift"),'Checklist changes are not audited');
 assert(checklist.includes("data-checklist-id"),'Checklist controls are not interactive');
 assert(checklist.includes("disabled"),'Checklist sign-off is not gated by critical controls');
+const seasonRequired=['futureRoster','futureAvailability','swapRequests','Upcoming','Next week','Month','Season','Set future availability','Request swap','Awaiting umpire acceptance','Awaiting coordinator approval','Season roster planner','availability, accreditation/development level, team/family conflict and assignment overlap','approveSwap','rejectSwap','acceptSwap','declineSwap','Future availability changed','Swap approved'];
+for(const text of seasonRequired)assert(season.includes(text),`Season planning/swaps missing: ${text}`);
+assert(season.includes("data-season-action=\"view\""),'Roster horizon views are not interactive');
+assert(season.includes("data-season-action=\"saveAvailability\""),'Future availability save action missing');
+assert(season.includes("data-season-action=\"swap\""),'Swap request action missing');
+assert(season.includes("result:'Eligible'"),'Swap eligibility ranking missing');
+assert(season.includes("s.status='Approved'"),'Coordinator approval does not complete swap');
+assert(season.includes("r.person=s.to"),'Approved swap does not update assignment owner');
+assert(season.includes("type:'Rostering'"),'Swap request does not create rostering Task');
+assert(season.includes("auditEvents.unshift"),'Season planning changes are not audited');
 if(failures.length){console.error('ClubRoster static QA failed:');failures.forEach(f=>console.error('- '+f));process.exit(1)}
-console.log(`ClubRoster static QA passed: ${requiredPages.length} substantive screens, mobile-first role lifecycles, and coordinator game-day checklist controls.`);
+console.log(`ClubRoster static QA passed: ${requiredPages.length} substantive screens, existing mobile/checklist controls, four forward roster horizons, advance availability and controlled umpire swaps.`);
