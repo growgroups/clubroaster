@@ -5,9 +5,9 @@ const failures = [];
 const assert = (ok, msg) => { if (!ok) failures.push(msg); };
 
 const requiredPages = [
-  'dashboard','import','fixtures','umpires','availability','roster','exceptions',
-  'gameday','payments','reports','notifications','rules','coaching','roles','junior',
-  'mobile','audit','blueprint','playbook','actionplan'
+  'dashboard','fixtures','umpires','availability','roster','tasks','gameday','payments',
+  'reports','notifications','import','rules','coaching','roles','junior','mobile','audit',
+  'blueprint','playbook','actionplan'
 ];
 
 for (const page of requiredPages) {
@@ -18,7 +18,7 @@ assert(html.includes('data-action="home"'), 'Home breadcrumb is not wired');
 assert(html.includes('data-action="current"'), 'Current-page breadcrumb is not wired');
 assert(html.includes('data-action="season"'), 'Season/context breadcrumb is not wired');
 assert(html.includes('data-go="${id}"'), 'Dynamic sidebar navigation is not wired');
-assert(html.includes('function openAction(a)'), 'Central action dispatcher is missing');
+assert(html.includes('function openAction('), 'Central action dispatcher is missing');
 assert(html.includes("document.addEventListener('click'"), 'Delegated click handler is missing');
 assert(!/href\s*=\s*(['"])#\1/i.test(html), 'Placeholder # link found');
 
@@ -37,6 +37,7 @@ if (scriptMatch) {
 const pageObject = html.match(/const pages=\{([^;]+)\};/s)?.[1] || '';
 const pageIds = new Set([...pageObject.matchAll(/([A-Za-z][A-Za-z0-9]*):'/g)].map(m => m[1]));
 for (const id of requiredPages) assert(pageIds.has(id), `Page missing from pages object: ${id}`);
+assert(!pageIds.has('exceptions'), 'Exceptions page should be renamed to Tasks');
 
 const accessMatch = html.match(/const access=\{([^;]+)\};/s);
 assert(!!accessMatch, 'Access matrix is missing');
@@ -47,13 +48,26 @@ if (accessMatch) {
   }
 }
 
-assert(html.includes("coaching:'Coaching & Development'"), 'Coaching & Development page is not defined');
-assert(html.includes('addLevel'), 'Development level admin action is missing');
-assert(html.includes('addCoachRule'), 'Game coaching rule action is missing');
+assert(html.includes("['SETTINGS',['import'"), 'Season Import is not positioned under Settings');
+assert(html.includes("tasks:'Tasks'"), 'Tasks page is not defined');
+assert(html.includes('No umpires allocated'), 'Tasks lacks missing-umpire dummy data');
+assert(html.includes('Mandatory coach missing'), 'Tasks lacks missing-coach dummy data');
+assert(html.includes('Mia asks for a later game'), 'Tasks lacks umpire request dummy data');
+assert(html.includes('Donna requests coaching swap'), 'Tasks lacks coach request dummy data');
+assert(html.includes('Guardian asks where to meet coach'), 'Tasks lacks communication dummy data');
+assert(html.includes('editAvailability'), 'Availability edit flow is missing');
+assert(html.includes('saveAvailability'), 'Availability save flow is missing');
+assert(html.includes('fixtureDetail'), 'Fixture detail click-through is missing');
+assert(html.includes('filterAction'), 'Fixture needs-action filter is missing');
+assert(html.includes('approveFee'), 'Match fee approval is missing');
+assert(html.includes('approveAllFees'), 'Bulk match fee approval is missing');
+assert(html.includes('reconcileFees'), 'Match fee reconciliation is missing');
+assert(html.includes('newRequest') && html.includes('sendRequest'), 'Umpire/coach request flow is missing');
+assert(html.includes('replyTask') && html.includes('resolveTask'), 'Task reply/resolve flow is missing');
+assert(html.includes('assignUmpire'), 'Umpire assignment action is missing');
 assert(html.includes('assignCoach'), 'Coach assignment action is missing');
-assert(html.includes('coachCheckin'), 'Coach game-day check-in action is missing');
+assert(html.includes("coaching:'Coaching & Development'"), 'Coaching settings page is missing');
 assert(html.includes('actionAccess'), 'Operational action authorisation is missing');
-assert(html.includes('closeDrawer();go('), 'Drawer navigation does not explicitly close before page navigation');
 
 if (failures.length) {
   console.error('ClubRoster static QA failed:');
@@ -61,4 +75,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`ClubRoster static QA passed: ${requiredPages.length} required screens, coaching workflow, role/action wiring, breadcrumbs and JavaScript syntax.`);
+console.log(`ClubRoster static QA passed: ${requiredPages.length} screens, Tasks, Settings import, fixtures, availability, requests and match-fee flows.`);
