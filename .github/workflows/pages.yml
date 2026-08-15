@@ -28,6 +28,7 @@ jobs:
         run: |
           node qa-static.js
           node qa-netball.js
+          node qa-ux.js
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
