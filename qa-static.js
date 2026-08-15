@@ -3,11 +3,13 @@ const html=fs.readFileSync('index.html','utf8');
 const app=fs.readFileSync('app.js','utf8');
 const patch=fs.readFileSync('patch.js','utf8');
 const mobile=fs.readFileSync('mobile-app.js','utf8');
+const checklist=fs.readFileSync('game-day-checklist.js','utf8');
 const failures=[];const assert=(ok,msg)=>{if(!ok)failures.push(msg)};
 const requiredPages=['dashboard','fixtures','umpires','availability','roster','tasks','gameday','finance','payments','reports','notifications','import','rules','coaching','roles','junior','mobile','audit','blueprint','playbook','actionplan'];
 assert(html.includes('<script src="app.js"></script>'),'index.html does not load app.js');
 assert(html.includes('<script src="patch.js"></script>'),'index.html does not load patch.js');
 assert(html.includes('<script src="mobile-app.js"></script>'),'index.html does not load mobile-app.js');
+assert(html.includes('<script src="game-day-checklist.js"></script>'),'index.html does not load game-day-checklist.js');
 assert(html.includes('data-action="home"'),'Home breadcrumb is not wired');
 assert(html.includes('data-action="current"'),'Current-page breadcrumb is not wired');
 assert(html.includes('data-action="season"'),'Season breadcrumb is not wired');
@@ -15,6 +17,7 @@ assert(!/href\s*=\s*(['"])#\1/i.test(html),'Placeholder # link found');
 try{new Function(app)}catch(err){failures.push(`app.js syntax error: ${err.message}`)}
 try{new Function(patch)}catch(err){failures.push(`patch.js syntax error: ${err.message}`)}
 try{new Function(mobile)}catch(err){failures.push(`mobile-app.js syntax error: ${err.message}`)}
+try{new Function(checklist)}catch(err){failures.push(`game-day-checklist.js syntax error: ${err.message}`)}
 const pageObject=app.match(/const pages=\{([^;]+)\};/s)?.[1]||'';
 const pageIds=new Set([...pageObject.matchAll(/([A-Za-z][A-Za-z0-9]*):'/g)].map(m=>m[1]));
 for(const id of requiredPages)assert(pageIds.has(id),`Page missing from pages object: ${id}`);
@@ -51,5 +54,11 @@ assert(mobile.includes("tasks.push({id:tasks.length+1,type:'Rostering'"),'Mobile
 assert(mobile.includes("tasks.push({id:tasks.length+1,type:'Compliance'"),'Mobile issue does not create compliance Task');
 assert(mobile.includes("p.coachComments.unshift"),'Mobile coaching feedback does not update umpire record');
 assert(mobile.includes("pay.status='Awaiting approval 1'"),'Coach completion does not feed payment readiness');
+const checklistRequired=['Before first games','Arrival & first whistle','During play','End of day','Confirm every game has required umpires and coaches','Review late/no-show list','Review and triage any incident','Confirm all umpire assignments are marked completed','Reconcile completed assignments to match-fee/payment lines','Create Tasks for outstanding','Sign off game day','coordinatorChecklist','syncChecklistTask','checklistCriticalOutstanding','Game-day checklist completed and signed off'];
+for(const text of checklistRequired)assert(checklist.includes(text),`Coordinator checklist missing: ${text}`);
+assert(checklist.includes("type:'Game Day'"),'Checklist does not create Game Day Tasks');
+assert(checklist.includes("auditEvents.unshift"),'Checklist changes are not audited');
+assert(checklist.includes("data-checklist-id"),'Checklist controls are not interactive');
+assert(checklist.includes("disabled"),'Checklist sign-off is not gated by critical controls');
 if(failures.length){console.error('ClubRoster static QA failed:');failures.forEach(f=>console.error('- '+f));process.exit(1)}
-console.log(`ClubRoster static QA passed: ${requiredPages.length} substantive screens plus complete mobile-first umpire, coach, coordinator, admin and guardian game-day lifecycles.`);
+console.log(`ClubRoster static QA passed: ${requiredPages.length} substantive screens, mobile-first role lifecycles, and coordinator game-day checklist controls.`);
