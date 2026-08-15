@@ -1,11 +1,10 @@
 const fs=require('fs');
 const html=fs.readFileSync('index.html','utf8');
 const nb=fs.readFileSync('netball-operations.js','utf8');
-const checklist=fs.readFileSync('game-day-checklist.js','utf8');
 const openMobile=fs.readFileSync('mobile-open-games.js','utf8');
 const failures=[]; const assert=(ok,msg)=>{if(!ok)failures.push(msg)};
 assert(html.includes('<script src="netball-operations.js"></script>'),'netball operations module not loaded');
-assert(checklist.includes("openGamesScript.src='mobile-open-games.js'"),'mobile open games module not loaded');
+assert(html.includes('<script src="mobile-open-games.js"></script>'),'mobile open games module not loaded');
 try{new Function(nb)}catch(err){failures.push(`netball-operations.js syntax error: ${err.message}`)}
 try{new Function(openMobile)}catch(err){failures.push(`mobile-open-games.js syntax error: ${err.message}`)}
 const requiredPages=['netballrules','duties','pathway','intelligence'];
@@ -22,17 +21,18 @@ assert(nb.includes('pairScores')&&nb.includes('pairing'),'Umpire pairing intelli
 assert(nb.includes('tasks.push'),'Netball workflows do not feed Tasks');
 assert(nb.includes('auditEvents.unshift'),'Netball workflows are not audited');
 assert(!nb.includes('employee/casual/contractor'),'Generic workforce classification leaked into netball module');
-const mobileRequired=['Open Games','Only games with an unfilled umpire position are listed.','Eligible for me','Assign me','Request game','Self-assign','Approval required','availability, badge/development level, conflicts and overlapping appointments','Umpire self-assigned','Game assigned to you and coordinator notified.'];
+const mobileRequired=['Open Games','These games still need an umpire.','Games I can take','Take this game','Ask coordinator','Take now','Coordinator approval','availability, umpire level, conflicts and other games at the same time','Umpire self-assigned','This game is now on your roster. The coordinator has been told.'];
 for(const text of mobileRequired)assert(openMobile.includes(text),`Mobile Open Games capability missing: ${text}`);
 assert(openMobile.includes("fixtures.filter(f=>!f.ump1||!f.ump2)"),'Mobile Open Games does not derive unfilled fixture positions');
 assert(openMobile.includes("a==='selfAssign'")&&openMobile.includes('completeSelfAssignment(g,p)'),'Mobile self-assignment handler missing');
 assert(openMobile.includes("a==='request'")&&openMobile.includes('requestOpenGame(g,p)'),'Restricted-game request handler missing');
 assert(openMobile.includes('mobileOpenGameEligibility'),'Eligibility re-check is missing');
 assert(openMobile.includes('levelRank')&&openMobile.includes('requiredRank'),'Badge/development-level eligibility is missing');
+assert(openMobile.includes('You are already on this game'),'Duplicate same-game protection missing');
 assert(openMobile.includes("f.ump1=p.name")||openMobile.includes("f.ump2=p.name"),'Self-assignment does not update fixture umpire slot');
 assert(openMobile.includes('mobileAssignments.push'),'Self-assignment does not update mobile roster');
 assert(openMobile.includes("t.status='Resolved'"),'Self-assignment does not resolve fulfilled rostering Tasks');
 assert(openMobile.includes('notifications.unshift'),'Coordinator notification missing after self-assignment/request');
 assert(openMobile.includes('auditEvents.unshift'),'Mobile Open Games workflow is not audited');
 if(failures.length){console.error('ClubRoster netball QA failed:');failures.forEach(f=>console.error('- '+f));process.exit(1)}
-console.log('ClubRoster netball QA passed: netball operating screens plus mobile Open Games eligibility, controlled self-assignment and coordinator-request workflow.');
+console.log('ClubRoster netball QA passed: netball operating screens plus plain-language mobile Open Games, eligibility checks, controlled self-assignment and coordinator request workflow.');
