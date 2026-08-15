@@ -2,16 +2,19 @@ const fs=require('fs');
 const html=fs.readFileSync('index.html','utf8');
 const app=fs.readFileSync('app.js','utf8');
 const patch=fs.readFileSync('patch.js','utf8');
+const mobile=fs.readFileSync('mobile-app.js','utf8');
 const failures=[];const assert=(ok,msg)=>{if(!ok)failures.push(msg)};
 const requiredPages=['dashboard','fixtures','umpires','availability','roster','tasks','gameday','finance','payments','reports','notifications','import','rules','coaching','roles','junior','mobile','audit','blueprint','playbook','actionplan'];
 assert(html.includes('<script src="app.js"></script>'),'index.html does not load app.js');
 assert(html.includes('<script src="patch.js"></script>'),'index.html does not load patch.js');
+assert(html.includes('<script src="mobile-app.js"></script>'),'index.html does not load mobile-app.js');
 assert(html.includes('data-action="home"'),'Home breadcrumb is not wired');
 assert(html.includes('data-action="current"'),'Current-page breadcrumb is not wired');
 assert(html.includes('data-action="season"'),'Season breadcrumb is not wired');
 assert(!/href\s*=\s*(['"])#\1/i.test(html),'Placeholder # link found');
 try{new Function(app)}catch(err){failures.push(`app.js syntax error: ${err.message}`)}
 try{new Function(patch)}catch(err){failures.push(`patch.js syntax error: ${err.message}`)}
+try{new Function(mobile)}catch(err){failures.push(`mobile-app.js syntax error: ${err.message}`)}
 const pageObject=app.match(/const pages=\{([^;]+)\};/s)?.[1]||'';
 const pageIds=new Set([...pageObject.matchAll(/([A-Za-z][A-Za-z0-9]*):'/g)].map(m=>m[1]));
 for(const id of requiredPages)assert(pageIds.has(id),`Page missing from pages object: ${id}`);
@@ -40,5 +43,13 @@ assert(app.includes('playbookItems'),'Playbook data is missing');
 assert(app.includes('actionPlan=['),'Action Plan data is missing');
 assert(patch.includes("a==='guardianMessage'"),'Guardian request patch is missing');
 assert(patch.includes('playbookToggle'),'Read-only playbook safeguard is missing');
+const mobileRequired=['mobilePersonas','mobileAssignments','mobileChats','developmentPlans','PAGE_RENDERERS.mobile=mobileAppPage','Umpire · Mia P','Umpire Coach · Karen W','Umpire Coordinator · Alex C','Game-day Admin · Jordan A','Guardian · Sam J','Accept','Decline game','I have arrived','Game completed','Coaching completed','Game chat','Report incident / issue','Add umpire feedback','My development','My payments','Live court coverage','Close / verify day','Mobile appointment declined','Compliance Task created','Mobile chat sent','Mobile coach feedback saved'];
+for(const text of mobileRequired)assert(mobile.includes(text),`Mobile workflow/data missing: ${text}`);
+const mobileActions=['persona','tab','accept','decline','confirmDecline','checkin','complete','openChat','gameChat','chatOpen','sendChat','reportIssue','saveIssue','showDevelopment','showPayments','coachFeedback','saveCoachFeedback','liveCoverage','manageFixture','taskOpen','openPerson','closeDay'];
+for(const action of mobileActions)assert(mobile.includes(`a==='${action}'`)||mobile.includes(`data-mobile-action=\"${action}\"`),`Mobile action missing: ${action}`);
+assert(mobile.includes("tasks.push({id:tasks.length+1,type:'Rostering'"),'Mobile decline does not create rostering Task');
+assert(mobile.includes("tasks.push({id:tasks.length+1,type:'Compliance'"),'Mobile issue does not create compliance Task');
+assert(mobile.includes("p.coachComments.unshift"),'Mobile coaching feedback does not update umpire record');
+assert(mobile.includes("pay.status='Awaiting approval 1'"),'Coach completion does not feed payment readiness');
 if(failures.length){console.error('ClubRoster static QA failed:');failures.forEach(f=>console.error('- '+f));process.exit(1)}
-console.log(`ClubRoster static QA passed: ${requiredPages.length} substantive screens, dedicated renderers, no placeholder routes, and complete operational interactions.`);
+console.log(`ClubRoster static QA passed: ${requiredPages.length} substantive screens plus complete mobile-first umpire, coach, coordinator, admin and guardian game-day lifecycles.`);
