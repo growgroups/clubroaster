@@ -6,7 +6,7 @@ for(const page of requiredPages) assert(new RegExp(`\\b${page}:'|\\b${page}:\\s*
 assert(html.includes('data-action="home"'),'Home breadcrumb is not wired');
 assert(html.includes('data-action="current"'),'Current-page breadcrumb is not wired');
 assert(html.includes('data-action="season"'),'Season breadcrumb is not wired');
-assert(html.includes('data-go="${id}"'),'Dynamic sidebar navigation is not wired');
+assert(html.includes('b.dataset.go=id'),'Dynamic sidebar navigation is not wired');
 assert(html.includes('function openAction('),'Central action dispatcher is missing');
 assert(html.includes("document.addEventListener('click'"),'Delegated click handler is missing');
 assert(!/href\s*=\s*(['"])#\1/i.test(html),'Placeholder # link found');
