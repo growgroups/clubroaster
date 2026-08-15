@@ -25,8 +25,8 @@ assert(!nb.includes('employee/casual/contractor'),'Generic workforce classificat
 const mobileRequired=['Open Games','Only games with an unfilled umpire position are listed.','Eligible for me','Assign me','Request game','Self-assign','Approval required','availability, badge/development level, conflicts and overlapping appointments','Umpire self-assigned','Game assigned to you and coordinator notified.'];
 for(const text of mobileRequired)assert(openMobile.includes(text),`Mobile Open Games capability missing: ${text}`);
 assert(openMobile.includes("fixtures.filter(f=>!f.ump1||!f.ump2)"),'Mobile Open Games does not derive unfilled fixture positions');
-assert(openMobile.includes("data-open-game-action=\"selfAssign\""),'Mobile self-assignment action missing');
-assert(openMobile.includes("data-open-game-action=\"request\""),'Restricted-game request action missing');
+assert(openMobile.includes("a==='selfAssign'")&&openMobile.includes('completeSelfAssignment(g,p)'),'Mobile self-assignment handler missing');
+assert(openMobile.includes("a==='request'")&&openMobile.includes('requestOpenGame(g,p)'),'Restricted-game request handler missing');
 assert(openMobile.includes('mobileOpenGameEligibility'),'Eligibility re-check is missing');
 assert(openMobile.includes('levelRank')&&openMobile.includes('requiredRank'),'Badge/development-level eligibility is missing');
 assert(openMobile.includes("f.ump1=p.name")||openMobile.includes("f.ump2=p.name"),'Self-assignment does not update fixture umpire slot');
