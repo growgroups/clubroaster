@@ -1,14 +1,17 @@
 const fs=require('fs');
 const html=fs.readFileSync('index.html','utf8');
 const app=fs.readFileSync('app.js','utf8');
+const patch=fs.readFileSync('patch.js','utf8');
 const failures=[];const assert=(ok,msg)=>{if(!ok)failures.push(msg)};
 const requiredPages=['dashboard','fixtures','umpires','availability','roster','tasks','gameday','finance','payments','reports','notifications','import','rules','coaching','roles','junior','mobile','audit','blueprint','playbook','actionplan'];
 assert(html.includes('<script src="app.js"></script>'),'index.html does not load app.js');
+assert(html.includes('<script src="patch.js"></script>'),'index.html does not load patch.js');
 assert(html.includes('data-action="home"'),'Home breadcrumb is not wired');
 assert(html.includes('data-action="current"'),'Current-page breadcrumb is not wired');
 assert(html.includes('data-action="season"'),'Season breadcrumb is not wired');
 assert(!/href\s*=\s*(['"])#\1/i.test(html),'Placeholder # link found');
-try{new Function(app)}catch(err){failures.push(`JavaScript syntax error: ${err.message}`)}
+try{new Function(app)}catch(err){failures.push(`app.js syntax error: ${err.message}`)}
+try{new Function(patch)}catch(err){failures.push(`patch.js syntax error: ${err.message}`)}
 const pageObject=app.match(/const pages=\{([^;]+)\};/s)?.[1]||'';
 const pageIds=new Set([...pageObject.matchAll(/([A-Za-z][A-Za-z0-9]*):'/g)].map(m=>m[1]));
 for(const id of requiredPages)assert(pageIds.has(id),`Page missing from pages object: ${id}`);
@@ -22,7 +25,7 @@ assert(app.includes("['SETTINGS',['import'"),'Season Import is not positioned un
 const requiredFunctions=['dashboard','fixturesPage','umpiresPage','availabilityPage','rosterPage','tasksPage','gameDayPage','financePage','paymentsPage','reportsPage','notificationsPage','importPage','rulesPage','coachingPage','rolesPage','juniorPage','mobilePage','auditPage','blueprintPage','playbookPage','actionPlanPage'];
 for(const fn of requiredFunctions)assert(new RegExp(`function ${fn}\\(`).test(app),`Page renderer function missing: ${fn}`);
 const requiredActions=['fixtureDetail','addFixture','assignUmpire','assignCoach','autoRoster','publish','openUmpire','profileTab','newIncident','saveIncident','coachComment','saveCoachComment','editAvailability','saveAvailability','newRequest','sendRequest','replyTask','resolveTask','gameCheckin','approve1','approve2','downloadBank','downloadXero','markPaid','reviewFee','clearFeeHold','broadcast','sendBroadcast','loadImport','importNext','saveImport','addRule','saveRule','addLevel','saveLevel','previewRole','guardianAck','exportAudit','playbookToggle','planToggle'];
-for(const action of requiredActions)assert(app.includes(`'${action}'`)||app.includes(`===\"${action}\"`)||app.includes(`===\'${action}\'`)||app.includes(`a==='${action}'`),`Required interaction missing: ${action}`);
+for(const action of requiredActions)assert(app.includes(`a==='${action}'`)||app.includes(`data-action=\"${action}\"`)||app.includes(`'${action}'`),`Required interaction missing: ${action}`);
 const requiredData=['Parent / spectator abuse','Club Umpire Registration','Green Bib','Blue Bib','C Badge','Senior Umpire Coach','PAY-R08-001','U11 Development','Gold Coast Netball','Round 8 appointment','Guardian linked','No umpires allocated','Bank CSV','Xero CSV'];
 for(const text of requiredData)assert(app.includes(text),`Required dummy data missing: ${text}`);
 assert(app.includes('approval1')&&app.includes('approval2'),'Two-person payment approval state is missing');
@@ -34,5 +37,7 @@ assert(app.includes('levels=['),'Coaching level administration data is missing')
 assert(app.includes('permissionRows'),'Roles & Access data is missing');
 assert(app.includes('playbookItems'),'Playbook data is missing');
 assert(app.includes('actionPlan=['),'Action Plan data is missing');
+assert(patch.includes("a==='guardianMessage'"),'Guardian request patch is missing');
+assert(patch.includes('playbookToggle'),'Read-only playbook safeguard is missing');
 if(failures.length){console.error('ClubRoster static QA failed:');failures.forEach(f=>console.error('- '+f));process.exit(1)}
-console.log(`ClubRoster static QA passed: ${requiredPages.length} substantive screens, dedicated renderers, operational interactions, compliance, communications, coaching and finance workflows.`);
+console.log(`ClubRoster static QA passed: ${requiredPages.length} substantive screens, dedicated renderers, no placeholder routes, and complete operational interactions.`);
