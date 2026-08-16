@@ -3,14 +3,16 @@ const html=fs.readFileSync('index.html','utf8');
 const c=fs.readFileSync('compliance-centre.js','utf8');
 const e=fs.readFileSync('compliance-enforcement.js','utf8');
 const r=fs.readFileSync('compliance-registers.js','utf8');
+const h=fs.readFileSync('final-hardening.js','utf8');
 const spec=fs.readFileSync('COMPLIANCE_SAFEGUARDING_SPEC.md','utf8');
 const failures=[];const assert=(ok,msg)=>{if(!ok)failures.push(msg)};
 assert(html.includes('<script src="compliance-centre.js"></script>'),'Compliance centre is not loaded');
 assert(html.includes('<script src="compliance-enforcement.js"></script>'),'Compliance enforcement is not loaded');
-assert(e.includes("s.src='compliance-registers.js'"),'Compliance registers module is not loaded');
+assert(e.includes("loadConceptModule('compliance-registers.js'")&&e.includes("loadConceptModule('final-hardening.js'"),'Compliance registers/final hardening bootstrap is not configured');
 try{new Function(c)}catch(err){failures.push('compliance-centre.js syntax error: '+err.message)}
 try{new Function(e)}catch(err){failures.push('compliance-enforcement.js syntax error: '+err.message)}
 try{new Function(r)}catch(err){failures.push('compliance-registers.js syntax error: '+err.message)}
+try{new Function(h)}catch(err){failures.push('final-hardening.js syntax error: '+err.message)}
 for(const text of ['Compliance & Safeguarding','Blue Card / Working with Children register','Queensland Child Safe Standards','Universal Principle','Safeguarding policies & evidence','Training & induction','Restricted safeguarding & incident register','Completed readiness phases','Exemption recorded','organisation linking'])assert(c.includes(text),'Compliance capability missing: '+text);
 for(let i=1;i<=10;i++)assert(c.includes("['"+i+"'"),'Child Safe Standard '+i+' missing');
 assert(c.includes("['UP'"),'Universal Principle record missing');
@@ -27,5 +29,7 @@ for(const text of ['Blue Cards / WWCC','Child Safe Standards','Incidents & compl
 assert(r.includes('registerDefs')&&r.includes('registersHub'),'Registers hub renderer missing');
 assert(r.includes("data-register-action=\"add\"")&&r.includes("data-register-action=\"view\""),'Register add/view actions missing');
 assert(r.includes('auditEvents.unshift'),'Register changes are not audited');
+assert(h.includes('saveBlueCardNew')&&h.includes('saveComplianceIncident'),'Final hardening does not implement working Blue Card/incident save flows');
+assert(h.includes('saveRegisterRecord')&&h.includes('openRegisterRecord'),'Final hardening does not implement register record click-throughs');
 if(failures.length){console.error('ClubRoster compliance QA failed:');failures.forEach(f=>console.error('- '+f));process.exit(1)}
-console.log('ClubRoster compliance QA passed: visible compliance centre, Blue Card controls, Queensland Child Safe Standards, 12 compliance registers, safeguarding records, readiness visibility and allocation gating.');
+console.log('ClubRoster compliance QA passed: visible compliance centre, Blue Card controls, Queensland Child Safe Standards, 12 interactive compliance registers, safeguarding records, readiness visibility and allocation gating.');
