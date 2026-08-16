@@ -30,6 +30,7 @@ jobs:
           node qa-netball.js
           node qa-ux.js
           node qa-fixtures.js
+          node qa-readiness.js
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
