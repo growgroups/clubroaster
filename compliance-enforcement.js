@@ -29,9 +29,3 @@ if(typeof saveAssignments==='function'){
     return baseSaveAssignments(f,u1,u2,coach);
   };
 }
-if(!document.querySelector('script[data-compliance-registers]')){
-  const s=document.createElement('script');
-  s.src='compliance-registers.js';
-  s.dataset.complianceRegisters='true';
-  document.body.appendChild(s);
-}
