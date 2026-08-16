@@ -29,3 +29,5 @@ if(typeof saveAssignments==='function'){
     return baseSaveAssignments(f,u1,u2,coach);
   };
 }
+function loadConceptModule(src,marker,onload){const existing=document.querySelector(`script[${marker}]`);if(existing){if(onload){if(existing.dataset.loaded==='true')onload();else existing.addEventListener('load',onload,{once:true})}return}const s=document.createElement('script');s.src=src;s.setAttribute(marker,'true');s.onload=()=>{s.dataset.loaded='true';if(onload)onload()};document.body.appendChild(s)}
+loadConceptModule('compliance-registers.js','data-compliance-registers',()=>loadConceptModule('final-hardening.js','data-final-hardening'));
