@@ -1,7 +1,9 @@
-name: Deploy ClubRoster to GitHub Pages
+name: ClubRoster CI and Pages
 
 on:
   push:
+    branches: ["main"]
+  pull_request:
     branches: ["main"]
   workflow_dispatch:
 
@@ -11,20 +13,17 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: "clubroster-${{ github.ref }}"
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  qa:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Static concept QA
+      - name: Full concept QA
         run: |
           node qa-static.js
           node qa-netball.js
@@ -32,6 +31,18 @@ jobs:
           node qa-fixtures.js
           node qa-readiness.js
           node qa-compliance.js
+          node qa-handover.js
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: qa
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
